@@ -1,16 +1,46 @@
 #' @export
 #' @import dplyr
-generate_coronadf <- function(Country, Province, L, enddate = NULL, usealpha3 = FALSE){
+generate_coronadf <- function(
+  Country,
+  Province,
+  L,
+  enddate = NULL,
+  usealpha3 = FALSE,
+  Country2 = Country,
+  Province2 = Province){
+
+  label1 <- paste(Country, Province, sep = "-")
+  label2 <- paste(Country2, Province2, sep = "-")
 
   if(usealpha3){
     covid19_data <- COVID19data::covid19_sorted %>%
-      filter(alpha3 == Country, Province.State == Province) %>%
       ungroup() %>%
-      mutate(Country.Region = alpha3)
-  } else if(!usealpha3){
+      mutate(
+        Country.Region = paste(alpha3, Province.State, sep = "-")
+      )
+  } else {
     covid19_data <- COVID19data::covid19_sorted %>%
-      filter(Country.Region == Country, Province.State == Province)
+      ungroup() %>%
+      mutate(
+        Country.Region = paste(Country.Region, Province.State, sep = "-")
+      )
   }
+
+  covid19_data <- covid19_data %>%
+    filter(Country.Region %in% c(label1, label2))
+
+
+  # if(usealpha3){
+  #   covid19_data <- COVID19data::covid19_sorted %>%
+  #     filter(alpha3 %in% c(Country, Country2), Province.State %in% c(Province, Province2)) %>%
+  #     ungroup() %>%
+  #     mutate(
+  #       Country.Region = paste(alpha3, Province.State, sep = "-")
+  #     )
+  # } else if(!usealpha3){
+  #   covid19_data <- COVID19data::covid19_sorted %>%
+  #     filter(Country.Region %in% c(Country, Country2), Province.State %in% c(Province, Province2))
+  # }
 
   if(!is.null(enddate)){
     covid19_data <- covid19_data %>% filter(date <= enddate)
@@ -23,13 +53,17 @@ generate_coronadf <- function(Country, Province, L, enddate = NULL, usealpha3 = 
     ungroup() %>%
     select(-Province.State)
 
-  covid19_data$Country.Region <- forcats::fct_recode(covid19_data$Country.Region, `1` = Country, `2` = Country) %>% as.character() %>% as.numeric()
+  covid19_data$Country.Region <- forcats::fct_recode(covid19_data$Country.Region, `1` = label1, `2` = label2) %>% as.character() %>% as.numeric()
 
   jh_mat1 <- as.matrix(covid19_data)
 
-  len = dim(jh_mat1)[1]
-  ref = simulate_reference_distribution(jh_mat1,T=len)
-  jh_mat = rbind(ref,jh_mat1)
+  if(Country == Country2 && Province == Province2){
+    len = dim(jh_mat1)[1]
+    ref = simulate_reference_distribution(jh_mat1,T=len)
+    jh_mat = rbind(ref,jh_mat1)
+  } else {
+    jh_mat = jh_mat1
+  }
 
   # jh_mat2 <- as.matrix(covid19_data)
   #

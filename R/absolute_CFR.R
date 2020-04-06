@@ -5,6 +5,8 @@ absolute_CFR <- function(
   L = 2,
   enddate = NULL,
   usealpha3 = FALSE,
+  Country2 = Country,
+  Province2 = Province,
   DESIRED_L = 20,
   MTTD = 14,
   min.cases = 100,
@@ -21,7 +23,7 @@ absolute_CFR <- function(
     assumed.nu = assumed.nu/sum(assumed.nu)
   }
 
-  data = generate_coronadf(Country, Province, DESIRED_L + L, enddate = enddate, usealpha3 = usealpha3)
+  data = generate_coronadf(Country, Province, DESIRED_L + L, enddate = enddate, usealpha3 = usealpha3, Country2 = Country2, Province2 = Province2)
 
   # This code fixes some errors in the JHU dataset (negative entries, all-zero rows).
   # data = reindex_time(data,DESIRED_L, min.cases)["data"][[1]]
