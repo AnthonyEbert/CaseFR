@@ -1,9 +1,22 @@
 #' @export
 #' @import dplyr
-generate_coronadf <- function(Country, Province, L){
+generate_coronadf <- function(Country, Province, L, enddate = NULL, usealpha3 = FALSE){
 
-  covid19_data <- COVID19data::covid19_sorted %>%
-    filter(Country.Region == Country, Province.State == Province) %>%
+  if(usealpha3){
+    covid19_data <- COVID19data::covid19_sorted %>%
+      filter(alpha3 == Country, Province.State == Province) %>%
+      ungroup() %>%
+      mutate(Country.Region = alpha3)
+  } else if(!usealpha3){
+    covid19_data <- COVID19data::covid19_sorted %>%
+      filter(Country.Region == Country, Province.State == Province)
+  }
+
+  if(!is.null(enddate)){
+    covid19_data <- covid19_data %>% filter(date <= enddate)
+  }
+
+  covid19_data <- covid19_data %>%
     group_by(Country.Region, Province.State) %>%
     arrange(date) %>%
     do(data.frame(time = 1:I(length(.$recovered)-1), recovered = diff(.$recovered), deaths = diff(.$deaths), confirmed = diff(.$confirmed))) %>%

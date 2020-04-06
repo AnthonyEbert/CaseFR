@@ -3,11 +3,17 @@ absolute_CFR <- function(
   Country,
   Province,
   L = 2,
+  enddate = NULL,
+  usealpha3 = FALSE,
   DESIRED_L = 20,
   MTTD = 14,
   min.cases = 100,
   assumed.nu = NULL,
-  output = "EM.rel.cfr"){
+  output = "EM.rel.cfr",
+  verb = FALSE,
+  SEM.var = TRUE,
+  max.iter = 2000,
+  tol = 1e-04){
 
   if(is.null(assumed.nu)){
     assumed.nu = dnorm(1:DESIRED_L,mean=MTTD,sd=1)
@@ -15,7 +21,7 @@ absolute_CFR <- function(
     assumed.nu = assumed.nu/sum(assumed.nu)
   }
 
-  data = generate_coronadf(Country, Province, DESIRED_L + L)
+  data = generate_coronadf(Country, Province, DESIRED_L + L, enddate = enddate, usealpha3 = usealpha3)
 
   # This code fixes some errors in the JHU dataset (negative entries, all-zero rows).
   # data = reindex_time(data,DESIRED_L, min.cases)["data"][[1]]
@@ -33,10 +39,16 @@ absolute_CFR <- function(
   cfr.out <- coarseDataTools::EMforCFR(assumed.nu = assumed.nu,
                       alpha.start.values = alpha.start,
                       full.data = data,
-                      verb = FALSE,
-                      SEM.var = TRUE,
-                      max.iter = 2000,
-                      tol = 1e-04)
+                      verb = verb,
+                      SEM.var = SEM.var,
+                      max.iter = max.iter,
+                      tol = tol)
 
-  return(cfr.out[output])
+  if(is.null(output)){
+    return_value <- cfr.out
+  } else {
+    return_value <- cfr.out[output]
+  }
+
+  return(return_value)
 }
