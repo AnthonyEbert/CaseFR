@@ -27,7 +27,8 @@ generate_coronadf <- function(
   }
 
   covid19_data <- covid19_data %>%
-    filter(Country.Region %in% c(label1, label2))
+    filter(Country.Region %in% c(label1, label2)) %>%
+    select(-Province.State)
 
 
   # if(usealpha3){
@@ -46,9 +47,20 @@ generate_coronadf <- function(
     covid19_data <- covid19_data %>% filter(date <= enddate)
   }
 
-  covid19_data <- covid19_data %>%
+  min_date <- min(covid19_data$date)
+
+  # Get the minimum of the maximum dates
+  max_date <- covid19_data %>%
     group_by(Country.Region) %>%
-    padr::pad(group = "Country.Region") %>%
+    summarise(max_date = max(date)) %>%
+    pull(max_date) %>%
+    min()
+
+  covid19_data <- covid19_data %>%
+    mutate(Country.Region = factor(Country.Region)) %>%
+    group_by(Country.Region) %>%
+    padr::pad(group = "Country.Region", start_val = min_date, end_val = max_date) %>%
+    padr::fill_by_value(confirmed, recovered, deaths) %>%
     arrange(date) %>%
     do(data.frame(time = 1:I(length(.$recovered)-1), recovered = diff(.$recovered), deaths = diff(.$deaths), confirmed = diff(.$confirmed))) %>%
     ungroup()
