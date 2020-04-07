@@ -47,13 +47,15 @@ generate_coronadf <- function(
   }
 
   covid19_data <- covid19_data %>%
-    group_by(Country.Region, Province.State) %>%
+    group_by(Country.Region) %>%
+    padr::pad(group = "Country.Region") %>%
     arrange(date) %>%
     do(data.frame(time = 1:I(length(.$recovered)-1), recovered = diff(.$recovered), deaths = diff(.$deaths), confirmed = diff(.$confirmed))) %>%
-    ungroup() %>%
-    select(-Province.State)
+    ungroup()
 
   covid19_data$Country.Region <- forcats::fct_recode(covid19_data$Country.Region, `1` = label1, `2` = label2) %>% as.character() %>% as.numeric()
+
+  covid19_data <- covid19_data %>% arrange(Country.Region, time)
 
   jh_mat1 <- as.matrix(covid19_data)
 
@@ -75,19 +77,19 @@ generate_coronadf <- function(
 
   colnames(jh_mat) <- c("time", "grp", "R", "D", "N")
 
-  # Pad with L zeros. This is to protect against assumed.nu being too big.
-  # Meanwhile, align the curves by aligning the beginning of each outbreak.
-  time_orig = dim(jh_mat)[1]/2
-  c1 = jh_mat[1:time_orig,]
-  c2 = jh_mat[(time_orig+1):(time_orig*2),]
-  #TODO: Curve alignment:
-  #t1 = min(which(c1[,"N"]>100))
-  #t2 = min(which(c2[,"N"]>100))
-  c1[,"time"] = c1[,"time"] + L
-  c2[,"time"] = c2[,"time"] + L
-  z1 = cbind(c(1:L),rep(1,L),rep(0,L),rep(0,L),rep(0,L))
-  z2 = cbind(c((1:L)),rep(2,L),rep(0,L),rep(0,L),rep(0,L))
-  jh_mat = rbind(z1,c1,z2,c2)
+  # # Pad with L zeros. This is to protect against assumed.nu being too big.
+  # # Meanwhile, align the curves by aligning the beginning of each outbreak.
+  # time_orig = dim(jh_mat)[1]/2
+  # c1 = jh_mat[1:time_orig,]
+  # c2 = jh_mat[(time_orig+1):(time_orig*2),]
+  # #TODO: Curve alignment:
+  # #t1 = min(which(c1[,"N"]>100))
+  # #t2 = min(which(c2[,"N"]>100))
+  # c1[,"time"] = c1[,"time"] + L
+  # c2[,"time"] = c2[,"time"] + L
+  # z1 = cbind(c(1:L),rep(1,L),rep(0,L),rep(0,L),rep(0,L))
+  # z2 = cbind(c((1:L)),rep(2,L),rep(0,L),rep(0,L),rep(0,L))
+  # jh_mat = rbind(z1,c1,z2,c2)
   return(jh_mat)
 }
 
